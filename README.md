@@ -1,6 +1,5 @@
 <!-- Banner image placeholder -->
 <div align="center">
-  <img src="public/og-image.png" alt="NginxConfig Banner" width="800" />
   
   <h1>NginxConfig</h1>
   <p><strong>Visual Nginx configuration generator. Free, open-source, runs in your browser.</strong></p>
@@ -134,7 +133,3 @@ We welcome contributions! Whether it's a bug fix, new preset, improved config ge
 This project is licensed under the AGPL-3.0 License — see the [LICENSE](LICENSE) file for details.
 
 You're free to use, modify, and self-host NginxConfig. If you modify it and offer it as a service, you must open-source your changes. See LICENSE for full terms.
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=frozze/Nginx-Config-Generator-&type=Date)](https://star-history.com/#frozze/Nginx-Config-Generator-&Date)
