@@ -1,0 +1,23 @@
+name: Feature Request
+description: Suggest an idea for this project
+title: "[FEAT] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What is the problem you want to solve or the feature you want to add?
+      placeholder: "I want to be able to generate Django configurations..."
+    validations:
+      required: true
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use Case
+      description: Who will benefit from this and how?
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: How do you imagine this feature working?

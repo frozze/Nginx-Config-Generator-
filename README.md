@@ -1,36 +1,140 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<!-- Banner image placeholder -->
+<div align="center">
+  <img src="public/og-image.png" alt="NginxConfig Banner" width="800" />
+  
+  <h1>NginxConfig</h1>
+  <p><strong>Visual Nginx configuration generator. Free, open-source, runs in your browser.</strong></p>
 
-## Getting Started
+  <p>
+    <a href="https://nginxconfig.io">Live Demo</a> ·
+    <a href="#features">Features</a> ·
+    <a href="#self-hosting">Self-Hosting</a> ·
+    <a href="#contributing">Contributing</a>
+  </p>
 
-First, run the development server:
+  <p>
+    <a href="https://github.com/frozze/Nginx-Config-Generator-/stargazers"><img src="https://img.shields.io/github/stars/frozze/Nginx-Config-Generator-?style=social" /></a>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue" /></a>
+    <a href="https://github.com/frozze/Nginx-Config-Generator-/actions"><img src="https://img.shields.io/github/actions/workflow/status/frozze/Nginx-Config-Generator-/ci.yml" /></a>
+  </p>
+</div>
+
+NginxConfig is a free, open-source tool that helps you build production-ready Nginx configurations through a visual interface. No data leaves your browser — everything is generated client-side. Configure reverse proxies, SSL, load balancing, security headers, and more without memorizing Nginx syntax.
+
+## Features
+
+- ⚡ **Real-time config generation** as you type
+- 🔒 **100% client-side** — no data sent to any server
+- 🎯 **One-click presets** (Static Site, Reverse Proxy, WordPress, SPA, Load Balancer)
+- 🔐 **SSL/TLS configuration** with Mozilla presets (Modern, Intermediate, Legacy)
+- 🔄 **Reverse proxy** with WebSocket support
+- ⚖️ **Load balancing** (Round Robin, Least Connections, IP Hash)
+- 🛡️ **Security headers** & rate limiting
+- 📦 **Gzip/Brotli compression** settings
+- 📋 **Copy or download** your config with one click
+- 🌙 **Dark/Light theme**
+- 📱 **Responsive design**
+- 🔍 **SEO-optimized** with documentation pages
+
+## Quick Start
 
 ```bash
+# Clone the repo
+git clone https://github.com/frozze/Nginx-Config-Generator-.git
+cd Nginx-Config-Generator-
+
+# Install dependencies
+npm install
+
+# Start development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# Open http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Self-Hosting with Docker
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# Clone and build
+git clone https://github.com/frozze/Nginx-Config-Generator-.git
+cd Nginx-Config-Generator-
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Run with Docker Compose
+docker compose up -d
 
-## Learn More
+# App is now running on http://localhost:3000
+```
 
-To learn more about Next.js, take a look at the following resources:
+> [!NOTE]
+> For production, put it behind a reverse proxy with SSL. See `nginx/nginx.conf` for an example configuration (yes, we generated it with our own tool 😎).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Presets
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Preset | Use Case | Key Features |
+|--------|----------|--------------|
+| Static Site | HTML/CSS/JS hosting | Gzip, caching, try_files |
+| Reverse Proxy | Node.js/Python/Go app | proxy_pass, WebSocket, real IP |
+| WordPress | PHP-FPM + WP | fastcgi, rewrites, security |
+| SPA | React/Vue/Angular | History mode fallback |
+| Load Balancer | Multiple backends | Upstream, health checks |
 
-## Deploy on Vercel
+## Tech Stack
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Layer | Technology |
+|-------|-----------|
+| Framework | Next.js 14 (App Router) |
+| Styling | Tailwind CSS |
+| Language | TypeScript |
+| State | Zustand |
+| Syntax Highlighting | Shiki / Prism.js |
+| Deployment | Docker / Vercel |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Project Structure
+
+```
+nginx-config-generator/
+├── src/
+│   ├── app/                          # Next.js pages & layouts
+│   ├── components/                   # All UI components
+│   │   ├── generator/                # Config form, preview, sections
+│   │   ├── layout/                   # Header, footer, theme
+│   │   └── ui/                       # Reusable UI primitives
+│   ├── lib/
+│   │   └── nginx/                    # Core engine (generator, validator, presets, types)
+│   ├── stores/                       # Zustand state management
+│   └── styles/                       # CSS
+├── public/                           # Static assets
+├── tests/                            # Unit tests for generator/validator
+├── docker-compose.yml                # Self-hosting setup
+├── Dockerfile
+├── nginx/                            # Example production nginx config
+└── package.json
+```
+
+## Contributing
+
+We welcome contributions! Whether it's a bug fix, new preset, improved config generation, or documentation — every PR helps. See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+
+## Roadmap
+
+- [x] Core config generator (8 sections)
+- [x] 5 presets
+- [x] Dark/Light theme
+- [x] Docker support
+- [ ] AI-powered config generation (Pro)
+- [ ] Save & share configs (Pro)
+- [ ] Nginx config linter / validator
+- [ ] Import existing nginx.conf and edit visually
+- [ ] More presets (Django, Laravel, Next.js, Caddy migration)
+- [ ] Config diff tool
+- [ ] Community preset library
+
+## License
+
+This project is licensed under the AGPL-3.0 License — see the [LICENSE](LICENSE) file for details.
+
+You're free to use, modify, and self-host NginxConfig. If you modify it and offer it as a service, you must open-source your changes. See LICENSE for full terms.
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=frozze/Nginx-Config-Generator-&type=Date)](https://star-history.com/#frozze/Nginx-Config-Generator-&Date)

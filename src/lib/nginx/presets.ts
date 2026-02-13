@@ -1,0 +1,248 @@
+// ─── Preset Templates ──────────────────────────────────────────────────────
+import type { NginxConfig } from './types';
+import { createDefaultConfig } from '@/stores/configStore';
+
+export interface Preset {
+    id: string;
+    name: string;
+    description: string;
+    icon: string; // lucide icon name
+    config: Partial<NginxConfig>;
+}
+
+export const presets: Preset[] = [
+    {
+        id: 'static',
+        name: 'Simple Static Site',
+        description: 'Basic static file serving with sensible defaults',
+        icon: 'FileText',
+        config: {
+            serverName: 'example.com',
+            listenPort: 80,
+            rootPath: '/var/www/html',
+            indexFiles: ['index.html', 'index.htm'],
+            performance: {
+                ...createDefaultConfig().performance,
+                gzip: true,
+                gzipTypes: ['text/plain', 'text/css', 'application/json', 'application/javascript', 'text/xml', 'application/xml', 'image/svg+xml'],
+                staticCaching: true,
+                cacheExpiry: '30d',
+            },
+            logging: {
+                ...createDefaultConfig().logging,
+                accessLog: true,
+                accessLogPath: '/var/log/nginx/access.log',
+                errorLog: true,
+                errorLogPath: '/var/log/nginx/error.log',
+                errorLogLevel: 'error',
+            },
+        },
+    },
+    {
+        id: 'reverse-proxy',
+        name: 'Reverse Proxy (Node.js/Python)',
+        description: 'Proxy requests to a backend application on localhost',
+        icon: 'ArrowRightLeft',
+        config: {
+            serverName: 'app.example.com',
+            listenPort: 80,
+            reverseProxy: {
+                enabled: true,
+                backendAddress: 'http://127.0.0.1:3000',
+                webSocket: true,
+                realIpHeaders: true,
+                customHeaders: [],
+            },
+            performance: {
+                ...createDefaultConfig().performance,
+                gzip: true,
+                gzipTypes: ['text/plain', 'text/css', 'application/json', 'application/javascript', 'text/xml'],
+                clientMaxBodySize: 10,
+                clientMaxBodyUnit: 'MB',
+            },
+            security: {
+                ...createDefaultConfig().security,
+                hideVersion: true,
+                securityHeaders: true,
+            },
+        },
+    },
+    {
+        id: 'wordpress',
+        name: 'WordPress',
+        description: 'PHP-FPM + common WordPress rewrite rules',
+        icon: 'Globe',
+        config: {
+            serverName: 'blog.example.com',
+            listenPort: 80,
+            rootPath: '/var/www/wordpress',
+            indexFiles: ['index.php', 'index.html', 'index.htm'],
+            locations: [
+                {
+                    id: 'wp-main',
+                    path: '/',
+                    type: 'static',
+                    root: '/var/www/wordpress',
+                    tryFiles: '$uri $uri/ /index.php?$args',
+                    index: 'index.php',
+                    autoindex: false,
+                    cacheExpiry: '',
+                    proxyPass: '',
+                    proxyWebSocket: false,
+                    proxyHeaders: [],
+                    redirectUrl: '',
+                    redirectCode: 301,
+                    customDirectives: '',
+                },
+                {
+                    id: 'wp-php',
+                    path: '~ \\.php$',
+                    type: 'custom',
+                    root: '',
+                    tryFiles: '',
+                    index: '',
+                    autoindex: false,
+                    cacheExpiry: '',
+                    proxyPass: '',
+                    proxyWebSocket: false,
+                    proxyHeaders: [],
+                    redirectUrl: '',
+                    redirectCode: 301,
+                    customDirectives: `fastcgi_pass unix:/var/run/php/php-fpm.sock;
+fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+include fastcgi_params;
+fastcgi_intercept_errors on;`,
+                },
+                {
+                    id: 'wp-deny',
+                    path: '~ /\\.ht',
+                    type: 'custom',
+                    root: '',
+                    tryFiles: '',
+                    index: '',
+                    autoindex: false,
+                    cacheExpiry: '',
+                    proxyPass: '',
+                    proxyWebSocket: false,
+                    proxyHeaders: [],
+                    redirectUrl: '',
+                    redirectCode: 301,
+                    customDirectives: 'deny all;',
+                },
+            ],
+            performance: {
+                ...createDefaultConfig().performance,
+                gzip: true,
+                gzipTypes: ['text/plain', 'text/css', 'application/json', 'application/javascript', 'text/xml', 'application/xml', 'image/svg+xml'],
+                staticCaching: true,
+                cacheExpiry: '30d',
+                clientMaxBodySize: 64,
+                clientMaxBodyUnit: 'MB',
+            },
+            security: {
+                ...createDefaultConfig().security,
+                hideVersion: true,
+                securityHeaders: true,
+            },
+        },
+    },
+    {
+        id: 'spa',
+        name: 'SPA (React/Vue)',
+        description: 'Single-page app with try_files fallback to index.html',
+        icon: 'Layout',
+        config: {
+            serverName: 'app.example.com',
+            listenPort: 80,
+            rootPath: '/var/www/app/dist',
+            indexFiles: ['index.html'],
+            locations: [
+                {
+                    id: 'spa-root',
+                    path: '/',
+                    type: 'static',
+                    root: '/var/www/app/dist',
+                    tryFiles: '$uri $uri/ /index.html',
+                    index: 'index.html',
+                    autoindex: false,
+                    cacheExpiry: '',
+                    proxyPass: '',
+                    proxyWebSocket: false,
+                    proxyHeaders: [],
+                    redirectUrl: '',
+                    redirectCode: 301,
+                    customDirectives: '',
+                },
+                {
+                    id: 'spa-api',
+                    path: '/api',
+                    type: 'proxy',
+                    root: '',
+                    tryFiles: '',
+                    index: '',
+                    autoindex: false,
+                    cacheExpiry: '',
+                    proxyPass: 'http://127.0.0.1:3000',
+                    proxyWebSocket: false,
+                    proxyHeaders: [],
+                    redirectUrl: '',
+                    redirectCode: 301,
+                    customDirectives: '',
+                },
+            ],
+            performance: {
+                ...createDefaultConfig().performance,
+                gzip: true,
+                gzipTypes: ['text/plain', 'text/css', 'application/json', 'application/javascript', 'text/xml', 'application/xml', 'image/svg+xml'],
+                staticCaching: true,
+                cacheExpiry: '7d',
+            },
+            security: {
+                ...createDefaultConfig().security,
+                hideVersion: true,
+                securityHeaders: true,
+            },
+        },
+    },
+    {
+        id: 'load-balanced',
+        name: 'Load Balanced API',
+        description: 'Upstream block with multiple backend servers',
+        icon: 'Network',
+        config: {
+            serverName: 'api.example.com',
+            listenPort: 80,
+            reverseProxy: {
+                enabled: true,
+                backendAddress: 'http://api_backends',
+                webSocket: false,
+                realIpHeaders: true,
+                customHeaders: [],
+            },
+            upstream: {
+                enabled: true,
+                name: 'api_backends',
+                method: 'least_conn',
+                servers: [
+                    { id: 'srv-1', address: '10.0.0.1:8080', weight: 3, maxFails: 3, failTimeout: 30 },
+                    { id: 'srv-2', address: '10.0.0.2:8080', weight: 2, maxFails: 3, failTimeout: 30 },
+                    { id: 'srv-3', address: '10.0.0.3:8080', weight: 1, maxFails: 3, failTimeout: 30 },
+                ],
+            },
+            security: {
+                ...createDefaultConfig().security,
+                hideVersion: true,
+                securityHeaders: true,
+                rateLimiting: true,
+                rateLimit: 10,
+                rateBurst: 20,
+            },
+            performance: {
+                ...createDefaultConfig().performance,
+                gzip: true,
+                gzipTypes: ['application/json', 'text/plain'],
+                keepaliveTimeout: 65,
+            },
+        },
+    },
+];
