@@ -1,11 +1,11 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useConfigStore } from '@/stores/configStore';
 import { lintConfig, availableRules, type LintReport, type LintResult } from '@/lib/nginx/linter';
 import { parseNginxConfig } from '@/lib/nginx/parser';
 import { generateNginxConfig } from '@/lib/nginx/engine/generator';
 import { NginxConfig } from '@/lib/nginx/types';
-import { AlertTriangle, CheckCircle, Info, Shield, Zap, RefreshCw, Copy, ArrowRight, Download, Wrench } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Info, RefreshCw, ArrowRight, Wrench } from 'lucide-react';
 import Link from 'next/link';
 
 export default function LinterPage() {
@@ -15,27 +15,19 @@ export default function LinterPage() {
     const [parsedConfig, setParsedConfig] = useState<NginxConfig | null>(null);
     const [parseError, setParseError] = useState<string | null>(null);
 
-    // Initial load or when user wants to load from generator
-    const loadFromGenerator = () => {
-        const generated = generateNginxConfig(storeConfig);
-        setInputConfig(generated.config);
-    };
-
-    // Run linting whenever input changes
-    useEffect(() => {
-        if (!inputConfig.trim()) {
+    const runLinting = useCallback((configStr: string) => {
+        if (!configStr.trim()) {
             setReport(null);
             setParsedConfig(null);
+            setParseError(null);
             return;
         }
 
         try {
-            const result = parseNginxConfig(inputConfig);
+            const result = parseNginxConfig(configStr);
             if (result.parseErrors.length > 0) {
                 setParseError(result.parseErrors.join('\n'));
-                // Try to lint anyway if we got a partial config? 
-                // For now, let's just show parser error.
-                setParsedConfig(result.config); // result.config might be partial
+                setParsedConfig(result.config);
                 const lintReport = lintConfig(result.config);
                 setReport(lintReport);
             } else {
@@ -44,11 +36,24 @@ export default function LinterPage() {
                 const lintReport = lintConfig(result.config);
                 setReport(lintReport);
             }
-        } catch (err: any) {
-            setParseError(err.message || 'Failed to parse configuration');
+        } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : 'Failed to parse configuration';
+            setParseError(errorMessage);
             setReport(null);
         }
-    }, [inputConfig]);
+    }, []);
+
+    const handleInputChange = (value: string) => {
+        setInputConfig(value);
+        runLinting(value);
+    };
+
+    // Initial load or when user wants to load from generator
+    const loadFromGenerator = () => {
+        const generated = generateNginxConfig(storeConfig);
+        setInputConfig(generated.config);
+        runLinting(generated.config);
+    };
 
     const applyFix = (result: LintResult) => {
         if (!parsedConfig) return;
@@ -58,20 +63,12 @@ export default function LinterPage() {
 
         try {
             const updates = rule.fix(parsedConfig);
-            // Deep merge updates into parsedConfig
-            // For simplicity, we assume generic object merge is needed, but our fixes are usually specific.
-            // We can use a simple spread for top-level, but deep merge for nested is safer.
-            // However, our current rules return full nested partials (e.g. { security: { hideVersion: true } })
-
-            // Let's implement a simple deep merge or just use what we have.
-            // Since our config structure is known, we can merge carefully.
             const newConfig = deepMerge(parsedConfig, updates);
 
             setParsedConfig(newConfig);
             const generated = generateNginxConfig(newConfig);
             setInputConfig(generated.config);
-
-            // The useEffect will trigger and re-lint
+            runLinting(generated.config);
         } catch (err) {
             console.error('Failed to apply fix:', err);
         }
@@ -104,7 +101,7 @@ export default function LinterPage() {
                     <div className="relative h-[600px] border border-dark-700 rounded-xl overflow-hidden bg-dark-950">
                         <textarea
                             value={inputConfig}
-                            onChange={(e) => setInputConfig(e.target.value)}
+                            onChange={(e) => handleInputChange(e.target.value)}
                             className="w-full h-full p-4 bg-transparent text-sm font-mono text-dark-200 resize-none focus:outline-none"
                             placeholder="server { ... }"
                             spellCheck={false}
@@ -201,6 +198,7 @@ export default function LinterPage() {
 }
 
 // Simple Deep Merge Utility
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function deepMerge(target: any, source: any): any {
     for (const key of Object.keys(source)) {
         if (source[key] instanceof Object && key in target) {

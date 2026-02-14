@@ -20,7 +20,10 @@ export async function GET(
         }
 
         return NextResponse.json(config);
-    } catch (_error) {
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    } catch {
+        return NextResponse.json(
+            { error: 'Failed to fetch shared config' },
+            { status: 500 }
+        );
     }
 }

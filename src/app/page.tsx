@@ -1,7 +1,6 @@
 'use client';
-import { ArrowDown, Zap, Shield, Globe, Code, Upload } from 'lucide-react';
+import { ArrowDown, Zap, Shield, Globe, Code } from 'lucide-react';
 import ConfigForm from '@/components/generator/ConfigForm';
-import Link from 'next/link';
 import ConfigPreview from '@/components/generator/ConfigPreview';
 import AdSlot from '@/components/ui/AdSlot';
 import { useState } from 'react';

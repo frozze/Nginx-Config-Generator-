@@ -5,7 +5,6 @@ import type { NginxConfig, ValidationWarning } from '../types';
 
 const DOMAIN_REGEX = /^(\*\.)?([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
 const IP_REGEX = /^(\d{1,3}\.){3}\d{1,3}$/;
-const URL_REGEX = /^https?:\/\/.+/;
 
 function warn(field: string, message: string): ValidationWarning {
     return { field, message, severity: 'warning' };
@@ -15,9 +14,7 @@ function error(field: string, message: string): ValidationWarning {
     return { field, message, severity: 'error' };
 }
 
-function info(field: string, message: string): ValidationWarning {
-    return { field, message, severity: 'info' };
-}
+
 
 /**
  * Validates an NginxConfig and returns an array of warnings/errors.

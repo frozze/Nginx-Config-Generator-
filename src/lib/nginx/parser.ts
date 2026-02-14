@@ -214,7 +214,7 @@ export function astToConfig(ast: NginxAST): ImportResult {
                 mapServerDirective(node, config, warnings, customDirectives);
             } else if (node.type === 'block') {
                 if (node.name === 'location') {
-                    const loc = mapLocationBlock(node, config, warnings);
+                    const loc = mapLocationBlock(node, config);
                     if (loc) config.locations.push(loc);
                 } else {
                     warnings.push(`Ignored unsupported block "${node.name}" inside server.`);
@@ -355,17 +355,18 @@ function mapServerDirective(
             break;
 
         default:
-            config.locations.length > 0
-                ? warnings.push(`Ignored directive "${name}"`)
-                : customDirectives.push(`${name} ${args.join(' ')};`);
+            if (config.locations.length > 0) {
+                warnings.push(`Ignored directive "${name}"`);
+            } else {
+                customDirectives.push(`${name} ${args.join(' ')};`);
+            }
             break;
     }
 }
 
 function mapLocationBlock(
     node: NginxNode,
-    config: NginxConfig,
-    warnings: string[]
+    config: NginxConfig
 ): LocationConfig | null {
     const loc = createDefaultLocation();
     const args = node.args;

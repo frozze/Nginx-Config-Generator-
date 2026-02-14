@@ -4,7 +4,8 @@ import { validateConfig } from '../src/lib/nginx/engine/validator';
 import type { NginxConfig } from '../src/lib/nginx/types';
 
 type DeepPartial<T> = {
-    [P in keyof T]?: DeepPartial<T[P]>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    [P in keyof T]?: T[P] extends Array<any> ? T[P] : DeepPartial<T[P]>;
 };
 
 // ── Helper ──
@@ -73,12 +74,12 @@ function makeValidConfig(overrides: DeepPartial<NginxConfig> = {}): NginxConfig 
     const config = { ...defaults, ...overrides } as NginxConfig;
 
     // Merge nested objects
-    if (overrides.ssl) config.ssl = { ...defaults.ssl, ...overrides.ssl } as any;
-    if (overrides.reverseProxy) config.reverseProxy = { ...defaults.reverseProxy, ...overrides.reverseProxy } as any;
-    if (overrides.security) config.security = { ...defaults.security, ...overrides.security } as any;
-    if (overrides.performance) config.performance = { ...defaults.performance, ...overrides.performance } as any;
-    if (overrides.logging) config.logging = { ...defaults.logging, ...overrides.logging } as any;
-    if (overrides.upstream) config.upstream = { ...defaults.upstream, ...overrides.upstream } as any;
+    if (overrides.ssl) config.ssl = { ...defaults.ssl, ...overrides.ssl };
+    if (overrides.reverseProxy) config.reverseProxy = { ...defaults.reverseProxy, ...overrides.reverseProxy };
+    if (overrides.security) config.security = { ...defaults.security, ...overrides.security };
+    if (overrides.performance) config.performance = { ...defaults.performance, ...overrides.performance };
+    if (overrides.logging) config.logging = { ...defaults.logging, ...overrides.logging };
+    if (overrides.upstream) config.upstream = { ...defaults.upstream, ...overrides.upstream };
 
     return config;
 }

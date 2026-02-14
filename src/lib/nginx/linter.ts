@@ -16,7 +16,7 @@ export interface LintRule {
     /**
      * Returns a partial config object to merge to fix the issue.
      */
-    fix?: (config: NginxConfig) => Partial<NginxConfig>;
+    fix?: (config: NginxConfig) => DeepPartial<NginxConfig>;
     docsUrl?: string;
 }
 
@@ -40,7 +40,13 @@ export interface LintReport {
     };
 }
 
-const rules: LintRule[] = [
+// Utility type for nested partials
+type DeepPartial<T> = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    [P in keyof T]?: T[P] extends Array<any> ? T[P] : DeepPartial<T[P]>;
+};
+
+export const rules: LintRule[] = [
     // ─── Security ─────────────────────────────────────────────────────────────
     {
         id: 'security-server-tokens',
@@ -49,7 +55,7 @@ const rules: LintRule[] = [
         category: 'security',
         severity: 'warning',
         test: (c) => !c.security.hideVersion, // Violated if hideVersion is false
-        fix: () => ({ security: { hideVersion: true } } as any),
+        fix: () => ({ security: { hideVersion: true } } as DeepPartial<NginxConfig>),
         docsUrl: '/docs/lint/security-server-tokens',
     },
     {
@@ -59,7 +65,7 @@ const rules: LintRule[] = [
         category: 'security',
         severity: 'error',
         test: (c) => !c.security.securityHeaders,
-        fix: () => ({ security: { securityHeaders: true } } as any),
+        fix: () => ({ security: { securityHeaders: true } } as DeepPartial<NginxConfig>),
         docsUrl: '/docs/lint/security-headers-missing',
     },
     {
@@ -91,7 +97,7 @@ const rules: LintRule[] = [
         category: 'performance',
         severity: 'warning',
         test: (c) => !c.performance.gzip,
-        fix: () => ({ performance: { gzip: true } } as any),
+        fix: () => ({ performance: { gzip: true } } as DeepPartial<NginxConfig>),
         docsUrl: '/docs/lint/perf-gzip-disabled',
     },
     {
@@ -101,7 +107,7 @@ const rules: LintRule[] = [
         category: 'performance',
         severity: 'info',
         test: (c) => c.ssl.enabled && !c.performance.http2,
-        fix: () => ({ performance: { http2: true } } as any),
+        fix: () => ({ performance: { http2: true } } as DeepPartial<NginxConfig>),
         docsUrl: '/docs/lint/perf-http2-disabled',
     },
 
@@ -113,7 +119,7 @@ const rules: LintRule[] = [
         category: 'best-practice',
         severity: 'warning',
         test: (c) => c.performance.workerConnections < 1024,
-        fix: () => ({ performance: { workerConnections: 1024 } } as any),
+        fix: () => ({ performance: { workerConnections: 1024 } } as DeepPartial<NginxConfig>),
         docsUrl: '/docs/lint/bp-worker-connections-low',
     },
     {
@@ -123,7 +129,7 @@ const rules: LintRule[] = [
         category: 'best-practice',
         severity: 'info',
         test: (c) => c.performance.keepaliveTimeout > 75,
-        fix: () => ({ performance: { keepaliveTimeout: 65 } } as any),
+        fix: () => ({ performance: { keepaliveTimeout: 65 } } as DeepPartial<NginxConfig>),
         docsUrl: '/docs/lint/bp-keepalive-timeout-high',
     },
 ];

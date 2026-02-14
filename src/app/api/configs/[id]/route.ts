@@ -29,7 +29,7 @@ export async function GET(
         }
 
         return NextResponse.json(config);
-    } catch (_error) {
+    } catch {
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
@@ -69,7 +69,7 @@ export async function PUT(
             .where(eq(savedConfigs.id, id));
 
         return NextResponse.json({ success: true });
-    } catch (_error) {
+    } catch {
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
@@ -96,7 +96,7 @@ export async function DELETE(
         // Usually assuming it succeeded if no error.
 
         return NextResponse.json({ success: true });
-    } catch (_error) {
+    } catch {
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
