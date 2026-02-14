@@ -17,26 +17,31 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://configen.dev'),
   title: {
-    default: 'NginxConfig — Free Visual Nginx Configuration Generator',
-    template: '%s | NginxConfig',
+    default: 'Configen — Visual Server Config Generator',
+    template: '%s | Configen',
   },
-  description: 'Generate production-ready Nginx configurations visually. Free, open-source, no signup. Configure reverse proxy, SSL, load balancing, security headers and more.',
+  description: 'Free, open-source visual config generator for Nginx, Caddy, and Docker Compose. Generate, import, lint, and edit production-ready configs in your browser.',
   openGraph: {
-    title: 'NginxConfig — Free Visual Nginx Configuration Generator',
-    description: 'Build production-ready nginx.conf files through an interactive visual interface. 100% client-side, no data leaves your browser.',
+    title: 'Configen — Visual Server Config Generator',
+    description: 'Generate, import, lint, and edit production-ready server configurations visually. 100% client-side.',
     url: process.env.NEXT_PUBLIC_SITE_URL,
-    siteName: 'NginxConfig',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'NginxConfig Preview' }],
+    siteName: 'Configen',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Configen Preview' }],
     locale: 'en_US',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'NginxConfig — Visual Nginx Config Generator',
-    description: 'Free, open-source, runs in your browser. No signup required.',
+    title: 'Configen — Visual Server Config Generator',
+    description: 'Free, open-source, runs in your browser. Generate & lint Nginx configs.',
     images: ['/og-image.png'],
+  },
+  icons: {
+    icon: '/icon.svg',
+    shortcut: '/icon.svg',
+    apple: '/icon.svg',
   },
   robots: { index: true, follow: true },
 };

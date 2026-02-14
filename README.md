@@ -1,7 +1,7 @@
 <div align="center">
   
-  <h1>NginxConfig</h1>
-  <p><strong>Visual Nginx configuration generator. Free, open-source, runs in your browser.</strong></p>
+  <h1>Configen</h1>
+  <p><strong>Visual Server Config Generator & Linter. Free, open-source, runs in your browser.</strong></p>
 
   <p>
     <a href="#features">Features</a> ·
@@ -14,7 +14,7 @@
   </p>
 </div>
 
-NginxConfig is a free, open-source tool that helps you build production-ready Nginx configurations through a visual interface. No data leaves your browser — everything is generated client-side. Configure reverse proxies, SSL, load balancing, security headers, and more without memorizing Nginx syntax.
+Configen is a free, open-source tool that helps you build production-ready server configurations through a visual interface. No data leaves your browser — everything is generated client-side. Configure Nginx reverse proxies, SSL, load balancing, security headers, and more without memorizing syntax. Now includes a built-in linter.
 
 ## Features
 
@@ -35,8 +35,8 @@ NginxConfig is a free, open-source tool that helps you build production-ready Ng
 
 ```bash
 # Clone the repo
-git clone https://github.com/frozze/Nginx-Config-Generator.git
-cd Nginx-Config-Generator
+git clone https://github.com/frozze/configen.git
+cd configen
 
 # Install dependencies
 npm install
@@ -51,8 +51,8 @@ npm run dev
 
 ```bash
 # Clone and build
-git clone https://github.com/frozze/Nginx-Config-Generator.git
-cd Nginx-Config-Generator
+git clone https://github.com/frozze/configen.git
+cd configen
 
 # Run with Docker Compose
 docker compose up -d

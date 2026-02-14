@@ -1,10 +1,11 @@
+
 import type { Metadata } from 'next';
 import { Server, Github, Globe } from 'lucide-react';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-    title: 'About — NginxConfig Generator',
-    description: 'About the free, open-source Nginx configuration generator tool.',
+    title: 'About — Configen',
+    description: 'Learn more about Configen, the free and open-source server configuration generator.',
 };
 
 export default function AboutPage() {
@@ -14,7 +15,7 @@ export default function AboutPage() {
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-accent-500/10 text-accent-400 mb-4">
                     <Server className="w-8 h-8" />
                 </div>
-                <h1 className="text-3xl font-bold text-dark-300">About NginxConfig</h1>
+                <h1 className="text-3xl font-bold text-dark-300">About Configen</h1>
                 <p className="text-dark-400 mt-3 text-lg">
                     A free, open-source tool to generate production-ready Nginx configurations visually.
                 </p>
@@ -24,8 +25,8 @@ export default function AboutPage() {
                 <section>
                     <h2 className="text-lg font-semibold text-dark-300 mb-3">Why we built this</h2>
                     <p>
-                        Writing Nginx configs from scratch is tedious and error-prone. We built NginxConfig Generator
-                        to make it easy for developers to create correct, secure, and optimized Nginx configurations
+                        Writing Nginx configs from scratch is tedious and error-prone. We built Configen
+                        to make it easy for developers to create correct, secure, and optimized server configurations
                         without memorizing directive syntax.
                     </p>
                 </section>

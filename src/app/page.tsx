@@ -1,10 +1,23 @@
 'use client';
-import { ArrowDown, Zap, Shield, Globe, Code } from 'lucide-react';
+import { ArrowDown, Zap, Shield, Globe, Code, Upload } from 'lucide-react';
 import ConfigForm from '@/components/generator/ConfigForm';
 import Link from 'next/link';
 import ConfigPreview from '@/components/generator/ConfigPreview';
 import AdSlot from '@/components/ui/AdSlot';
 import { useState } from 'react';
+import { useUIStore } from '@/stores/uiStore';
+
+function HeroImportButton() {
+  const { openImportModal } = useUIStore();
+  return (
+    <button
+      onClick={openImportModal}
+      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl border border-dark-600 text-dark-300 font-semibold text-sm hover:bg-dark-800 transition-colors"
+    >
+      Import Config
+    </button>
+  );
+}
 
 const features = [
   { icon: <Zap className="w-5 h-5" />, title: 'Instant Generation', desc: 'Config updates in real-time as you change settings' },
@@ -72,38 +85,50 @@ export default function HomePage() {
               <span className="text-xs font-medium text-accent-400">Free &amp; Open Source</span>
             </div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight">
-              <span className="text-dark-300">Nginx Config Generator</span>
+            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold tracking-tight mb-4">
+              <span className="text-dark-200">Server configs,</span>
               <br />
               <span className="bg-gradient-to-r from-accent-400 to-accent-600 bg-clip-text text-transparent">
-                Build Your Config Visually
+                without the headache.
               </span>
             </h1>
 
             <p className="mt-6 text-lg text-dark-400 max-w-2xl mx-auto leading-relaxed">
-              Free, open-source, no signup required. Generate production-ready Nginx configurations in seconds.
-              Everything runs in your browser — your data never leaves your machine.
+              Generate, import &amp; lint production-ready server configurations visually.
+              <br className="hidden sm:block" />
+              100% client-side. No data leaves your browser.
             </p>
 
-            <div className="mt-8 flex items-center justify-center gap-4">
+            <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
               <a
                 href="#generator"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-accent-500 text-white font-semibold text-sm hover:bg-accent-600 transition-all shadow-lg shadow-accent-500/25 hover:shadow-accent-500/40 glow-pulse"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-accent-500 text-white font-semibold text-sm hover:bg-accent-600 transition-all shadow-lg shadow-accent-500/25 hover:shadow-accent-500/40 glow-pulse"
               >
-                Start Building
-                <ArrowDown className="w-4 h-4" />
+                Start Generating <ArrowDown className="w-4 h-4" />
               </a>
-              <Link
-                href="/docs/reverse-proxy"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-dark-600 text-dark-300 font-semibold text-sm hover:bg-dark-800 transition-colors"
-              >
-                Read Docs
-              </Link>
+
+              <HeroImportButton />
+            </div>
+
+            {/* Platform Badges */}
+            <div className="mt-12 flex flex-wrap justify-center gap-4">
+              <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-raised border border-dark-700">
+                <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span className="text-sm font-medium text-dark-300">Nginx</span>
+              </div>
+              <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-raised border border-dark-700 opacity-60 tooltip" title="Coming Soon">
+                <div className="w-2 h-2 rounded-full bg-dark-600" />
+                <span className="text-sm font-medium text-dark-400">Caddy (Soon)</span>
+              </div>
+              <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-raised border border-dark-700 opacity-60 tooltip" title="Coming Soon">
+                <div className="w-2 h-2 rounded-full bg-dark-600" />
+                <span className="text-sm font-medium text-dark-400">Docker (Soon)</span>
+              </div>
             </div>
           </div>
 
           {/* Feature cards */}
-          <div className="mt-16 grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="mt-20 grid grid-cols-2 lg:grid-cols-4 gap-4">
             {features.map((f, i) => (
               <div
                 key={i}

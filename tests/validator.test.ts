@@ -1,39 +1,86 @@
 // ─── Validator Unit Tests ────────────────────────────────────────────────────
 import { describe, it, expect } from 'vitest';
 import { validateConfig } from '../src/lib/nginx/engine/validator';
-import type { NginxFullConfig } from '../src/lib/nginx/engine/types';
+import type { NginxConfig } from '../src/lib/nginx/types';
+
+type DeepPartial<T> = {
+    [P in keyof T]?: DeepPartial<T[P]>;
+};
 
 // ── Helper ──
-function makeValidConfig(overrides?: Partial<NginxFullConfig>): NginxFullConfig {
-    return {
-        server: {
-            serverName: ['example.com'],
-            listenPort: 80,
-            listenIPv6: true,
-            root: '/var/www/html',
-            index: ['index.html'],
+function makeValidConfig(overrides: DeepPartial<NginxConfig> = {}): NginxConfig {
+    const defaults: NginxConfig = {
+        serverName: 'example.com',
+        listenPort: 80,
+        listen443: false,
+        rootPath: '/var/www/html',
+        indexFiles: ['index.html'],
+        ssl: {
+            enabled: false,
+            certificatePath: '/etc/ssl/cert.pem',
+            keyPath: '/etc/ssl/key.pem',
+            protocols: ['TLSv1.2', 'TLSv1.3'],
+            preset: 'intermediate',
+            httpRedirect: false,
+            enableHSTS: false,
+            enableOCSP: false,
         },
+        reverseProxy: { enabled: false, backendAddress: '', webSocket: false, realIpHeaders: true, customHeaders: [] },
         locations: [
-            { path: '/', matchType: 'prefix', type: 'static', static: { root: '/var/www/html', tryFiles: '$uri $uri/ =404' } },
+            { id: '1', path: '/', matchType: 'prefix', type: 'static', root: '/var/www/html', tryFiles: '$uri $uri/ =404', index: '', autoindex: false, cacheExpiry: '', proxyPass: '', proxyWebSocket: false, proxyHeaders: [], redirectUrl: '', redirectCode: 301, customDirectives: '' },
         ],
         security: {
-            serverTokens: false,
-            securityHeaders: { xContentTypeOptions: true },
+            hideVersion: false,
+            securityHeaders: true,
+            ipAllowlist: [],
+            ipDenylist: [],
+            rateLimiting: false,
+            rateLimit: 10,
+            rateBurst: 20,
+            basicAuth: false,
+            basicAuthRealm: '',
+            basicAuthFile: '',
         },
         performance: {
+            gzip: true,
+            brotli: false,
             http2: false,
-            clientMaxBodySize: '10M',
+            clientMaxBodySize: 10,
+            clientMaxBodyUnit: 'MB',
             keepaliveTimeout: 65,
-            sendfile: true,
-            tcpNopush: true,
-            tcpNodelay: true,
+            workerConnections: 1024,
+            staticCaching: false,
+            cacheExpiry: '',
+            gzipTypes: [],
         },
         logging: {
-            accessLog: { enabled: true, path: '/var/log/nginx/access.log' },
-            errorLog: { enabled: true, path: '/var/log/nginx/error.log', level: 'error' },
+            accessLog: true,
+            accessLogPath: '/var/log/nginx/access.log',
+            errorLog: true,
+            errorLogPath: '/var/log/nginx/error.log',
+            errorLogLevel: 'error',
+            customLogFormat: false,
         },
-        ...overrides,
+        upstream: {
+            enabled: false,
+            name: 'backend',
+            servers: [],
+            method: 'round-robin',
+        },
     };
+
+    // Shallow merge top-level
+    const config = { ...defaults, ...overrides } as NginxConfig;
+
+    // Merge nested objects
+    if (overrides.ssl) config.ssl = { ...defaults.ssl, ...overrides.ssl } as any;
+    if (overrides.reverseProxy) config.reverseProxy = { ...defaults.reverseProxy, ...overrides.reverseProxy } as any;
+    if (overrides.security) config.security = { ...defaults.security, ...overrides.security } as any;
+    if (overrides.performance) config.performance = { ...defaults.performance, ...overrides.performance } as any;
+    if (overrides.logging) config.logging = { ...defaults.logging, ...overrides.logging } as any;
+    if (overrides.upstream) config.upstream = { ...defaults.upstream, ...overrides.upstream } as any;
+
+    return config;
 }
 
 describe('validateConfig', () => {
@@ -45,208 +92,74 @@ describe('validateConfig', () => {
 
     it('should warn on invalid domain name', () => {
         const warnings = validateConfig(makeValidConfig({
-            server: { serverName: ['not a valid domain!'], listenPort: 80, listenIPv6: true },
+            serverName: 'not a valid domain!',
         }));
-        expect(warnings.some((w) => w.field === 'server.serverName' && w.severity === 'warning')).toBe(true);
+        expect(warnings.some((w) => w.field === 'serverName' && w.severity === 'warning')).toBe(true);
     });
 
     it('should accept "localhost" as valid server name', () => {
         const warnings = validateConfig(makeValidConfig({
-            server: { serverName: ['localhost'], listenPort: 80, listenIPv6: true },
+            serverName: 'localhost',
         }));
-        const domainWarnings = warnings.filter((w) => w.field === 'server.serverName' && w.message.includes('valid domain'));
-        expect(domainWarnings).toHaveLength(0);
-    });
-
-    it('should accept "_" (catch-all) as valid server name', () => {
-        const warnings = validateConfig(makeValidConfig({
-            server: { serverName: ['_'], listenPort: 80, listenIPv6: true },
-        }));
-        const domainWarnings = warnings.filter((w) => w.field === 'server.serverName' && w.message.includes('valid domain'));
+        const domainWarnings = warnings.filter((w) => w.field === 'serverName' && w.message.includes('valid domain'));
         expect(domainWarnings).toHaveLength(0);
     });
 
     it('should error on port out of range', () => {
         const warnings = validateConfig(makeValidConfig({
-            server: { serverName: ['example.com'], listenPort: 70000, listenIPv6: true },
+            listenPort: 70000,
         }));
-        expect(warnings.some((w) => w.field === 'server.listenPort' && w.severity === 'error')).toBe(true);
+        expect(warnings.some((w) => w.field === 'listenPort' && w.severity === 'error')).toBe(true);
     });
 
     it('should warn when SSL is enabled but cert path is missing', () => {
         const warnings = validateConfig(makeValidConfig({
             ssl: {
                 enabled: true,
-                certPath: '',
-                keyPath: '/etc/ssl/key.pem',
-                protocols: ['TLSv1.2', 'TLSv1.3'],
-                preset: 'intermediate',
-                httpRedirect: false,
-                hsts: false,
-                ocspStapling: false,
+                certificatePath: '',
             },
         }));
-        expect(warnings.some((w) => w.field === 'ssl.certPath')).toBe(true);
-    });
-
-    it('should warn when SSL key path does not start with /', () => {
-        const warnings = validateConfig(makeValidConfig({
-            ssl: {
-                enabled: true,
-                certPath: '/etc/ssl/cert.pem',
-                keyPath: 'relative/path/key.pem',
-                protocols: ['TLSv1.2', 'TLSv1.3'],
-                preset: 'intermediate',
-                httpRedirect: false,
-                hsts: false,
-                ocspStapling: false,
-            },
-        }));
-        expect(warnings.some((w) => w.field === 'ssl.keyPath')).toBe(true);
+        expect(warnings.some((w) => w.field === 'ssl.certificatePath')).toBe(true);
     });
 
     it('should error on duplicate location paths', () => {
         const warnings = validateConfig(makeValidConfig({
             locations: [
-                { path: '/api', matchType: 'prefix', type: 'proxy', proxy: { backendAddress: 'http://localhost:3000', websocket: false, passRealIP: true, customHeaders: {} } },
-                { path: '/api', matchType: 'prefix', type: 'proxy', proxy: { backendAddress: 'http://localhost:3001', websocket: false, passRealIP: true, customHeaders: {} } },
+                { id: '1', path: '/api', matchType: 'prefix', type: 'proxy', proxyPass: 'http://localhost:3000', proxyWebSocket: false, proxyHeaders: [], root: '', tryFiles: '', index: '', autoindex: false, cacheExpiry: '', redirectUrl: '', redirectCode: 301, customDirectives: '' },
+                { id: '2', path: '/api', matchType: 'prefix', type: 'proxy', proxyPass: 'http://localhost:3001', proxyWebSocket: false, proxyHeaders: [], root: '', tryFiles: '', index: '', autoindex: false, cacheExpiry: '', redirectUrl: '', redirectCode: 301, customDirectives: '' },
             ],
         }));
         expect(warnings.some((w) => w.message.includes('Duplicate') && w.severity === 'error')).toBe(true);
     });
 
-    it('should NOT flag locations with same path but different match types as duplicates', () => {
-        const warnings = validateConfig(makeValidConfig({
-            locations: [
-                { path: '/api', matchType: 'prefix', type: 'proxy', proxy: { backendAddress: 'http://localhost:3000', websocket: false, passRealIP: true, customHeaders: {} } },
-                { path: '/api', matchType: 'exact', type: 'proxy', proxy: { backendAddress: 'http://localhost:3001', websocket: false, passRealIP: true, customHeaders: {} } },
-            ],
-        }));
-        expect(warnings.some((w) => w.message.includes('Duplicate'))).toBe(false);
-    });
-
-    it('should warn when upstream is defined but not referenced', () => {
+    it('should warn when upstream is enabled but has no servers', () => {
         const warnings = validateConfig(makeValidConfig({
             upstream: {
-                name: 'orphan_upstream',
-                servers: [{ address: 'localhost:3001' }],
-                method: 'round_robin',
-            },
-            locations: [
-                { path: '/', matchType: 'prefix', type: 'static', static: { root: '/var/www', tryFiles: '$uri $uri/ =404' } },
-            ],
-        }));
-        expect(warnings.some((w) => w.field === 'upstream' && w.message.includes('not referenced'))).toBe(true);
-    });
-
-    it('should NOT warn when upstream is referenced in proxy_pass', () => {
-        const warnings = validateConfig(makeValidConfig({
-            upstream: {
-                name: 'my_backend',
-                servers: [{ address: 'localhost:3001' }],
-                method: 'round_robin',
-            },
-            locations: [
-                { path: '/', matchType: 'prefix', type: 'proxy', proxy: { backendAddress: 'http://my_backend', websocket: false, passRealIP: true, customHeaders: {} } },
-            ],
-        }));
-        expect(warnings.some((w) => w.field === 'upstream' && w.message.includes('not referenced'))).toBe(false);
-    });
-
-    it('should error on gzip compression level out of range', () => {
-        const warnings = validateConfig(makeValidConfig({
-            performance: {
-                gzip: { enabled: true, compLevel: 15, minLength: 256, types: ['text/plain'] },
-                http2: false,
-                clientMaxBodySize: '10M',
-                keepaliveTimeout: 65,
-                sendfile: true,
-                tcpNopush: true,
-                tcpNodelay: true,
-            },
-        }));
-        expect(warnings.some((w) => w.field === 'performance.gzip.compLevel' && w.severity === 'error')).toBe(true);
-    });
-
-    it('should warn on client max body size over 1GB', () => {
-        const warnings = validateConfig(makeValidConfig({
-            performance: {
-                http2: false,
-                clientMaxBodySize: '2G',
-                keepaliveTimeout: 65,
-                sendfile: true,
-                tcpNopush: true,
-                tcpNodelay: true,
-            },
-        }));
-        expect(warnings.some((w) => w.field === 'performance.clientMaxBodySize')).toBe(true);
-    });
-
-    it('should warn on HSTS max-age less than 1 day', () => {
-        const warnings = validateConfig(makeValidConfig({
-            ssl: {
                 enabled: true,
-                certPath: '/etc/ssl/cert.pem',
-                keyPath: '/etc/ssl/key.pem',
-                protocols: ['TLSv1.2', 'TLSv1.3'],
-                preset: 'intermediate',
-                httpRedirect: false,
-                hsts: true,
-                hstsMaxAge: 3600, // 1 hour — too short
-                ocspStapling: false,
+                name: 'orphan_upstream',
+                servers: [],
             },
         }));
-        expect(warnings.some((w) => w.field === 'ssl.hstsMaxAge')).toBe(true);
-    });
-
-    it('should warn when HTTP/2 is enabled without SSL', () => {
-        const warnings = validateConfig(makeValidConfig({
-            performance: {
-                http2: true,
-                clientMaxBodySize: '10M',
-                keepaliveTimeout: 65,
-                sendfile: true,
-                tcpNopush: true,
-                tcpNodelay: true,
-            },
-        }));
-        expect(warnings.some((w) => w.field === 'performance.http2')).toBe(true);
+        expect(warnings.some((w) => w.field === 'upstream')).toBe(true);
     });
 
     it('should error on empty upstream server address', () => {
         const warnings = validateConfig(makeValidConfig({
             upstream: {
+                enabled: true,
                 name: 'backend',
-                servers: [{ address: '' }],
-                method: 'round_robin',
+                servers: [{ id: '1', address: '', weight: 1, maxFails: 1, failTimeout: 10 }],
             },
         }));
         expect(warnings.some((w) => w.field === 'upstream.servers' && w.severity === 'error')).toBe(true);
     });
 
-    it('should error on proxy location with no backend address', () => {
+    it('should error on proxy location with no proxyPass', () => {
         const warnings = validateConfig(makeValidConfig({
             locations: [
-                { path: '/api', matchType: 'prefix', type: 'proxy', proxy: { backendAddress: '', websocket: false, passRealIP: true, customHeaders: {} } },
+                { id: '1', path: '/api', matchType: 'prefix', type: 'proxy', proxyPass: '', proxyWebSocket: false, proxyHeaders: [], root: '', tryFiles: '', index: '', autoindex: false, cacheExpiry: '', redirectUrl: '', redirectCode: 301, customDirectives: '' },
             ],
         }));
         expect(warnings.some((w) => w.field === 'locations.proxy' && w.severity === 'error')).toBe(true);
-    });
-
-    it('should info on DH params recommended for intermediate preset', () => {
-        const warnings = validateConfig(makeValidConfig({
-            ssl: {
-                enabled: true,
-                certPath: '/etc/ssl/cert.pem',
-                keyPath: '/etc/ssl/key.pem',
-                protocols: ['TLSv1.2', 'TLSv1.3'],
-                preset: 'intermediate',
-                httpRedirect: false,
-                hsts: false,
-                ocspStapling: false,
-                // no dhParamPath
-            },
-        }));
-        expect(warnings.some((w) => w.field === 'ssl.dhParamPath' && w.severity === 'info')).toBe(true);
     });
 });

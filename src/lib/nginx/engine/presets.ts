@@ -2,36 +2,50 @@
 // Each preset produces a working, deployable nginx config.
 // Browser-compatible — no Node.js APIs.
 
-import type { NginxFullConfig } from './types';
+import type { NginxConfig } from '../types';
 
 export interface PresetMeta {
     id: string;
     name: string;
     description: string;
-    config: NginxFullConfig;
+    config: NginxConfig;
 }
 
 // ── Shared defaults ──
 
 const defaultSecurity = {
-    serverTokens: false,
-    securityHeaders: {
-        xFrameOptions: 'SAMEORIGIN' as const,
-        xContentTypeOptions: true,
-        referrerPolicy: 'strict-origin-when-cross-origin',
-    },
+    hideVersion: false,
+    securityHeaders: true,
+    ipAllowlist: [],
+    ipDenylist: [],
+    rateLimiting: false,
+    rateLimit: 10,
+    rateBurst: 20,
+    basicAuth: false,
+    basicAuthRealm: '',
+    basicAuthFile: '',
 };
 
 const defaultLogging = {
-    accessLog: { enabled: true, path: '/var/log/nginx/access.log' },
-    errorLog: { enabled: true, path: '/var/log/nginx/error.log', level: 'error' as const },
+    accessLog: true,
+    accessLogPath: '/var/log/nginx/access.log',
+    errorLog: true,
+    errorLogPath: '/var/log/nginx/error.log',
+    errorLogLevel: 'error' as const,
+    customLogFormat: false,
 };
 
-const defaultGzip = {
-    enabled: true,
-    compLevel: 6,
-    minLength: 256,
-    types: [
+const defaultPerformance = {
+    gzip: true,
+    brotli: false,
+    http2: false,
+    clientMaxBodySize: 10,
+    clientMaxBodyUnit: 'MB' as const,
+    keepaliveTimeout: 65,
+    workerConnections: 1024,
+    staticCaching: false,
+    cacheExpiry: '30d',
+    gzipTypes: [
         'text/plain',
         'text/css',
         'application/json',
@@ -44,122 +58,147 @@ const defaultGzip = {
     ],
 };
 
+const defaultUpstream = {
+    enabled: false,
+    name: 'backend',
+    servers: [],
+    method: 'round-robin' as const,
+};
+
+const defaultSSL = {
+    enabled: false,
+    certificatePath: '/etc/ssl/cert.pem',
+    keyPath: '/etc/ssl/key.pem',
+    protocols: ['TLSv1.2', 'TLSv1.3'],
+    preset: 'intermediate' as const,
+    httpRedirect: false,
+    enableHSTS: false,
+    enableOCSP: false,
+};
+
+const defaultReverseProxy = {
+    enabled: false,
+    backendAddress: '',
+    webSocket: false,
+    realIpHeaders: true,
+    customHeaders: [],
+};
+
 // ════════════════════════════════════════════════════════════════════════════
 // Presets
 // ════════════════════════════════════════════════════════════════════════════
 
-const staticSite: NginxFullConfig = {
-    server: {
-        serverName: ['example.com', 'www.example.com'],
-        listenPort: 80,
-        listenIPv6: true,
-        root: '/var/www/html',
-        index: ['index.html', 'index.htm'],
-    },
+const staticSite: NginxConfig = {
+    serverName: 'example.com www.example.com',
+    listenPort: 80,
+    listen443: false,
+    rootPath: '/var/www/html',
+    indexFiles: ['index.html', 'index.htm'],
+    ssl: defaultSSL,
+    reverseProxy: defaultReverseProxy,
     locations: [
         {
+            id: 'root',
             path: '/',
             matchType: 'prefix',
             type: 'static',
-            static: {
-                root: '/var/www/html',
-                tryFiles: '$uri $uri/ =404',
-            },
+            root: '/var/www/html',
+            tryFiles: '$uri $uri/ =404',
+            index: '', autoindex: false,
+            cacheExpiry: '', proxyPass: '', proxyWebSocket: false, proxyHeaders: [],
+            redirectUrl: '', redirectCode: 301 as const, customDirectives: ''
         },
     ],
     security: defaultSecurity,
     performance: {
-        gzip: defaultGzip,
-        http2: false,
-        clientMaxBodySize: '10M',
-        keepaliveTimeout: 65,
-        sendfile: true,
-        tcpNopush: true,
-        tcpNodelay: true,
-        staticCaching: {
-            images: '30d',
-            css: '7d',
-            js: '7d',
-            fonts: '30d',
-        },
+        ...defaultPerformance,
+        staticCaching: true,
     },
     logging: defaultLogging,
+    upstream: defaultUpstream,
 };
 
-const reverseProxy: NginxFullConfig = {
-    server: {
-        serverName: ['app.example.com'],
-        listenPort: 443,
-        listenIPv6: true,
-    },
+const reverseProxy: NginxConfig = {
+    serverName: 'app.example.com',
+    listenPort: 443,
+    listen443: true,
+    rootPath: '',
+    indexFiles: [],
     ssl: {
+        ...defaultSSL,
         enabled: true,
-        certPath: '/etc/letsencrypt/live/app.example.com/fullchain.pem',
+        certificatePath: '/etc/letsencrypt/live/app.example.com/fullchain.pem',
         keyPath: '/etc/letsencrypt/live/app.example.com/privkey.pem',
-        protocols: ['TLSv1.2', 'TLSv1.3'],
-        preset: 'intermediate',
         httpRedirect: true,
-        hsts: true,
-        hstsMaxAge: 63072000,
-        ocspStapling: true,
+        enableHSTS: true,
+        enableOCSP: true,
+    },
+    reverseProxy: {
+        enabled: true,
+        backendAddress: 'http://127.0.0.1:3000',
+        webSocket: true,
+        realIpHeaders: true,
+        customHeaders: [],
     },
     locations: [
         {
+            id: 'root',
             path: '/',
             matchType: 'prefix',
             type: 'proxy',
-            proxy: {
-                backendAddress: 'http://127.0.0.1:3000',
-                websocket: true,
-                passRealIP: true,
-                customHeaders: {},
-                proxyReadTimeout: 60,
-            },
+            proxyPass: 'http://127.0.0.1:3000',
+            proxyWebSocket: true,
+            proxyHeaders: [
+                { key: 'Upgrade', value: '$http_upgrade' },
+                { key: 'Connection', value: 'upgrade' },
+            ],
+            root: '', tryFiles: '', index: '', autoindex: false,
+            cacheExpiry: '', redirectUrl: '', redirectCode: 301 as const, customDirectives: ''
         },
     ],
-    security: defaultSecurity,
+    security: {
+        ...defaultSecurity,
+        securityHeaders: true,
+    },
     performance: {
-        gzip: defaultGzip,
+        ...defaultPerformance,
         http2: true,
-        clientMaxBodySize: '10M',
-        keepaliveTimeout: 65,
-        sendfile: true,
-        tcpNopush: true,
-        tcpNodelay: true,
+        staticCaching: true,
     },
     logging: defaultLogging,
+    upstream: defaultUpstream,
 };
 
-const wordpress: NginxFullConfig = {
-    server: {
-        serverName: ['blog.example.com'],
-        listenPort: 443,
-        listenIPv6: true,
-        root: '/var/www/wordpress',
-        index: ['index.php', 'index.html', 'index.htm'],
-    },
+const wordpress: NginxConfig = {
+    serverName: 'blog.example.com',
+    listenPort: 443,
+    listen443: true,
+    rootPath: '/var/www/wordpress',
+    indexFiles: ['index.php', 'index.html', 'index.htm'],
     ssl: {
+        ...defaultSSL,
         enabled: true,
-        certPath: '/etc/letsencrypt/live/blog.example.com/fullchain.pem',
+        certificatePath: '/etc/letsencrypt/live/blog.example.com/fullchain.pem',
         keyPath: '/etc/letsencrypt/live/blog.example.com/privkey.pem',
-        protocols: ['TLSv1.2', 'TLSv1.3'],
-        preset: 'intermediate',
         httpRedirect: true,
-        hsts: true,
-        hstsMaxAge: 63072000,
-        ocspStapling: true,
+        enableHSTS: true,
+        enableOCSP: true,
     },
+    reverseProxy: defaultReverseProxy,
     locations: [
         {
+            id: 'root',
             path: '/',
             matchType: 'prefix',
             type: 'static',
-            static: {
-                root: '/var/www/wordpress',
-                tryFiles: '$uri $uri/ /index.php?$args',
-            },
+            root: '/var/www/wordpress',
+            tryFiles: '$uri $uri/ /index.php?$args',
+            index: '', autoindex: false,
+            cacheExpiry: '', proxyPass: '', proxyWebSocket: false, proxyHeaders: [],
+            redirectUrl: '', redirectCode: 301 as const, customDirectives: ''
         },
         {
+            id: 'php',
             path: '\\.php$',
             matchType: 'regex',
             type: 'custom',
@@ -171,198 +210,152 @@ const wordpress: NginxFullConfig = {
                 'fastcgi_buffer_size 128k;',
                 'fastcgi_buffers 4 256k;',
             ].join('\n'),
+            root: '', tryFiles: '', index: '', autoindex: false,
+            cacheExpiry: '', proxyPass: '', proxyWebSocket: false, proxyHeaders: [],
+            redirectUrl: '', redirectCode: 301 as const
         },
         {
+            id: 'ht',
             path: '/\\.ht',
             matchType: 'regex',
             type: 'custom',
             customDirectives: 'deny all;',
-        },
-        {
-            path: '/wp-content/uploads/',
-            matchType: 'prefix',
-            type: 'static',
-            static: {
-                root: '/var/www/wordpress',
-                expires: '30d',
-            },
+            root: '', tryFiles: '', index: '', autoindex: false,
+            cacheExpiry: '', proxyPass: '', proxyWebSocket: false, proxyHeaders: [],
+            redirectUrl: '', redirectCode: 301 as const
         },
     ],
-    security: {
-        ...defaultSecurity,
-        securityHeaders: {
-            ...defaultSecurity.securityHeaders,
-            xFrameOptions: 'SAMEORIGIN',
-        },
-    },
+    security: defaultSecurity,
     performance: {
-        gzip: defaultGzip,
+        ...defaultPerformance,
         http2: true,
-        clientMaxBodySize: '64M',
-        keepaliveTimeout: 65,
-        sendfile: true,
-        tcpNopush: true,
-        tcpNodelay: true,
-        staticCaching: {
-            images: '30d',
-            css: '7d',
-            js: '7d',
-            fonts: '30d',
-        },
+        clientMaxBodySize: 64,
+        staticCaching: true,
     },
     logging: defaultLogging,
+    upstream: defaultUpstream,
 };
 
-const spa: NginxFullConfig = {
-    server: {
-        serverName: ['app.example.com'],
-        listenPort: 443,
-        listenIPv6: true,
-        root: '/var/www/app/dist',
-        index: ['index.html'],
-    },
+const spa: NginxConfig = {
+    serverName: 'app.example.com',
+    listenPort: 443,
+    listen443: true,
+    rootPath: '/var/www/app/dist',
+    indexFiles: ['index.html'],
     ssl: {
+        ...defaultSSL,
         enabled: true,
-        certPath: '/etc/letsencrypt/live/app.example.com/fullchain.pem',
+        certificatePath: '/etc/letsencrypt/live/app.example.com/fullchain.pem',
         keyPath: '/etc/letsencrypt/live/app.example.com/privkey.pem',
-        protocols: ['TLSv1.2', 'TLSv1.3'],
-        preset: 'intermediate',
         httpRedirect: true,
-        hsts: true,
-        hstsMaxAge: 63072000,
-        ocspStapling: true,
+        enableHSTS: true,
+        enableOCSP: true,
     },
+    reverseProxy: defaultReverseProxy,
     locations: [
         {
+            id: 'root',
             path: '/',
             matchType: 'prefix',
             type: 'static',
-            static: {
-                root: '/var/www/app/dist',
-                tryFiles: '$uri $uri/ /index.html',
-            },
+            root: '/var/www/app/dist',
+            tryFiles: '$uri $uri/ /index.html',
+            index: '', autoindex: false,
+            cacheExpiry: '', proxyPass: '', proxyWebSocket: false, proxyHeaders: [],
+            redirectUrl: '', redirectCode: 301 as const, customDirectives: ''
         },
         {
+            id: 'api',
             path: '/api',
             matchType: 'prefix',
             type: 'proxy',
-            proxy: {
-                backendAddress: 'http://127.0.0.1:3000',
-                websocket: false,
-                passRealIP: true,
-                customHeaders: {},
-            },
+            proxyPass: 'http://127.0.0.1:3000',
+            proxyWebSocket: false, proxyHeaders: [],
+            root: '', tryFiles: '', index: '', autoindex: false,
+            cacheExpiry: '', redirectUrl: '', redirectCode: 301 as const, customDirectives: ''
         },
     ],
     security: {
         ...defaultSecurity,
-        securityHeaders: {
-            ...defaultSecurity.securityHeaders,
-            contentSecurityPolicy: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';",
-        },
+        // In simple model, securityHeaders is boolean.
+        // If we want detailed CSP, we might need customDirectives in NginxConfig
+        securityHeaders: true,
     },
     performance: {
-        gzip: defaultGzip,
+        ...defaultPerformance,
         http2: true,
-        clientMaxBodySize: '10M',
-        keepaliveTimeout: 65,
-        sendfile: true,
-        tcpNopush: true,
-        tcpNodelay: true,
-        staticCaching: {
-            images: '30d',
-            css: '7d',
-            js: '7d',
-            fonts: '30d',
-        },
+        staticCaching: true,
     },
     logging: defaultLogging,
+    upstream: defaultUpstream,
 };
 
-const loadBalanced: NginxFullConfig = {
-    server: {
-        serverName: ['api.example.com'],
-        listenPort: 443,
-        listenIPv6: true,
-    },
+const loadBalanced: NginxConfig = {
+    serverName: 'api.example.com',
+    listenPort: 443,
+    listen443: true,
+    rootPath: '',
+    indexFiles: [],
     ssl: {
+        ...defaultSSL,
         enabled: true,
-        certPath: '/etc/letsencrypt/live/api.example.com/fullchain.pem',
+        certificatePath: '/etc/letsencrypt/live/api.example.com/fullchain.pem',
         keyPath: '/etc/letsencrypt/live/api.example.com/privkey.pem',
-        protocols: ['TLSv1.2', 'TLSv1.3'],
-        preset: 'intermediate',
         httpRedirect: true,
-        hsts: true,
-        hstsMaxAge: 63072000,
-        ocspStapling: true,
+        enableHSTS: true,
+        enableOCSP: true,
     },
+    // We don't have a top-level field for load balancer settings in simple config, 
+    // but Upstream is supported
+    reverseProxy: defaultReverseProxy,
     upstream: {
+        enabled: true,
         name: 'api_backends',
         servers: [
-            { address: '10.0.0.1:8080', weight: 3, maxFails: 3, failTimeout: '30s' },
-            { address: '10.0.0.2:8080', weight: 2, maxFails: 3, failTimeout: '30s' },
-            { address: '10.0.0.3:8080', weight: 1, maxFails: 3, failTimeout: '30s', backup: true },
+            { id: 's1', address: '10.0.0.1:8080', weight: 3, maxFails: 3, failTimeout: 30 },
+            { id: 's2', address: '10.0.0.2:8080', weight: 2, maxFails: 3, failTimeout: 30 },
+            { id: 's3', address: '10.0.0.3:8080', weight: 1, maxFails: 3, failTimeout: 30 },
         ],
-        method: 'least_conn',
-        keepalive: 32,
+        method: 'least_conn' as const,
     },
     locations: [
         {
+            id: 'root',
             path: '/',
             matchType: 'prefix',
             type: 'proxy',
-            proxy: {
-                backendAddress: 'http://api_backends',
-                websocket: false,
-                passRealIP: true,
-                customHeaders: {},
-                proxyConnectTimeout: 10,
-                proxyReadTimeout: 60,
-                proxySendTimeout: 60,
-            },
+            proxyPass: 'http://api_backends',
+            proxyWebSocket: false, proxyHeaders: [],
+            root: '', tryFiles: '', index: '', autoindex: false,
+            cacheExpiry: '', redirectUrl: '', redirectCode: 301 as const, customDirectives: ''
         },
         {
+            id: 'health',
             path: '/health',
             matchType: 'exact',
             type: 'proxy',
-            proxy: {
-                backendAddress: 'http://api_backends',
-                websocket: false,
-                passRealIP: false,
-                customHeaders: {},
-            },
+            proxyPass: 'http://api_backends',
+            proxyWebSocket: false, proxyHeaders: [],
+            root: '', tryFiles: '', index: '', autoindex: false,
+            cacheExpiry: '', redirectUrl: '', redirectCode: 301 as const, customDirectives: ''
         },
     ],
     security: {
         ...defaultSecurity,
-        rateLimit: {
-            enabled: true,
-            zone: '$binary_remote_addr zone=req_limit:10m rate=10r/s',
-            requests: 10,
-            burst: 20,
-            nodelay: true,
-        },
+        rateLimiting: true,
+        rateLimit: 10,
+        rateBurst: 20,
     },
     performance: {
-        gzip: {
-            enabled: true,
-            compLevel: 6,
-            minLength: 256,
-            types: ['application/json', 'text/plain'],
-        },
+        ...defaultPerformance,
         http2: true,
-        clientMaxBodySize: '10M',
-        keepaliveTimeout: 65,
-        sendfile: true,
-        tcpNopush: true,
-        tcpNodelay: true,
     },
     logging: defaultLogging,
 };
 
 // ── Export all presets ──
 
-export const presetConfigs: Record<string, NginxFullConfig> = {
+export const presetConfigs: Record<string, NginxConfig> = {
     staticSite,
     reverseProxy,
     wordpress,

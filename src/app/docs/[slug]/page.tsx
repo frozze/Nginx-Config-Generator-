@@ -289,7 +289,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     const doc = docs[slug];
     if (!doc) return { title: 'Not Found' };
     return {
-        title: `${doc.title} — NginxConfig`,
+        title: `${doc.title} — Configen`,
         description: doc.description,
         openGraph: { title: doc.title, description: doc.description },
     };

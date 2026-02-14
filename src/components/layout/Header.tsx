@@ -1,20 +1,20 @@
 'use client';
 import Link from 'next/link';
-import { Server, Menu, X } from 'lucide-react';
+import { Server, Menu, X, Upload } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import { useState } from 'react';
-import { Upload } from 'lucide-react';
 import ImportModal from '../ImportModal';
+import { useUIStore } from '@/stores/uiStore';
 
 const navLinks = [
     { href: '/#generator', label: 'Generator' },
     { href: '/docs/reverse-proxy', label: 'Docs' },
-    { href: 'https://github.com/frozze/Nginx-Config-Generator', label: 'GitHub', external: true },
+    { href: 'https://github.com/frozze/configen', label: 'GitHub', external: true },
 ];
 
 export default function Header() {
     const [mobileOpen, setMobileOpen] = useState(false);
-    const [importOpen, setImportOpen] = useState(false);
+    const { isImportModalOpen, openImportModal, closeImportModal } = useUIStore();
 
     return (
         <>
@@ -27,7 +27,7 @@ export default function Header() {
                                 <Server className="w-5 h-5" />
                             </div>
                             <span className="text-lg font-bold text-dark-300 hidden sm:block">
-                                Nginx<span className="text-accent-400">Config</span>
+                                Confi<span className="text-accent-400">gen</span>
                             </span>
                         </Link>
 
@@ -46,7 +46,7 @@ export default function Header() {
                             ))}
 
                             <button
-                                onClick={() => setImportOpen(true)}
+                                onClick={openImportModal}
                                 className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-dark-400 hover:text-dark-300 hover:bg-dark-800 transition-colors"
                             >
                                 <Upload className="w-4 h-4" />
@@ -88,7 +88,7 @@ export default function Header() {
                             <button
                                 onClick={() => {
                                     setMobileOpen(false);
-                                    setImportOpen(true);
+                                    openImportModal();
                                 }}
                                 className="w-full text-left flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-dark-400 hover:text-dark-300 hover:bg-dark-800 transition-colors"
                             >
@@ -100,7 +100,7 @@ export default function Header() {
                 </div>
             </header>
 
-            <ImportModal isOpen={importOpen} onClose={() => setImportOpen(false)} />
+            <ImportModal isOpen={isImportModalOpen} onClose={closeImportModal} />
         </>
     );
 }

@@ -15,11 +15,11 @@ export default function Footer() {
                                 <Server className="w-4 h-4" />
                             </div>
                             <span className="text-base font-bold text-dark-300">
-                                Nginx<span className="text-accent-400">Config</span>
+                                Confi<span className="text-accent-400">gen</span>
                             </span>
                         </Link>
                         <p className="text-sm text-dark-500 max-w-xs">
-                            Free, open-source Nginx configuration generator. No signup, no tracking, everything runs in your browser.
+                            Free, open-source server configuration generator. No signup, no tracking, everything runs in your browser.
                         </p>
                     </div>
 
@@ -36,16 +36,17 @@ export default function Footer() {
 
                     {/* More */}
                     <div>
-                        <h3 className="text-sm font-semibold text-dark-400 mb-3">About</h3>
+                        <h3 className="text-sm font-semibold text-dark-400 mb-3">Project</h3>
                         <ul className="space-y-2">
                             <li><Link href="/about" className="text-sm text-dark-500 hover:text-accent-400 transition-colors">About</Link></li>
-                            <li><Link href="https://github.com" target="_blank" className="text-sm text-dark-500 hover:text-accent-400 transition-colors">GitHub</Link></li>
+                            <li><Link href="https://github.com/frozze/configen" target="_blank" className="text-sm text-dark-500 hover:text-accent-400 transition-colors">GitHub</Link></li>
+                            <li><Link href="/roadmap" className="text-sm text-dark-500 hover:text-accent-400 transition-colors">Roadmap</Link></li>
                         </ul>
                     </div>
                 </div>
 
                 <div className="mt-10 pt-6 border-t border-dark-800 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-dark-500">
-                    <p>&copy; {new Date().getFullYear()} NginxConfig Generator. All rights reserved.</p>
+                    <p>&copy; {new Date().getFullYear()} Configen. All rights reserved.</p>
                     <p className="flex items-center gap-1">
                         Made with <Heart className="w-3 h-3 text-err-400" /> for the dev community
                     </p>

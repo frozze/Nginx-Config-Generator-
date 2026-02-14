@@ -1,10 +1,11 @@
 {
-  "name": "nginx-config-generator",
+  "name": "configen",
   "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "postbuild": "next-sitemap",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
@@ -24,6 +25,7 @@
     "framer-motion": "^12.34.0",
     "lucide-react": "^0.564.0",
     "next": "16.1.6",
+    "next-sitemap": "^4.2.3",
     "prismjs": "^1.30.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",

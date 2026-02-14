@@ -109,7 +109,18 @@ export interface NginxConfig {
     customDirectives?: string; // Added for top-level unknown directives
 }
 
+export interface ValidationWarning {
+    field: string;
+    message: string;
+    severity: 'info' | 'warning' | 'error';
+}
+
 export interface ConfigWarning {
     section: string;
     message: string;
+}
+
+export interface GenerationResult {
+    config: string;
+    warnings: ConfigWarning[];
 }
