@@ -2,6 +2,9 @@ name: CI
 on:
   workflow_dispatch:
 
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/nginx-config-generator
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
@@ -31,7 +34,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository }}
+          images: ${{ env.IMAGE_NAME }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -58,13 +61,11 @@ jobs:
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             docker stop nginx-config-generator || true
             docker rm nginx-config-generator || true
-            docker pull ghcr.io/${{ github.repository }}:main
+            docker pull ${{ env.IMAGE_NAME }}:main
             docker run -d \
               --name nginx-config-generator \
               -p 3000:3000 \
               -v ${{ secrets.TARGET_DIR }}:/app/data \
               -v ${{ secrets.TARGET_DIR }}/.env:/app/.env.production.local \
               --restart unless-stopped \
-              ghcr.io/${{ github.repository }}:main
-
-
+              ${{ env.IMAGE_NAME }}:main
