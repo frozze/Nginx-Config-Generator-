@@ -11,3 +11,4 @@
 - [ ] More presets (Django, Laravel, Next.js, Caddy migration)
 - [ ] Config diff tool
 - [ ] Community preset library
+- [ ] Restructure documentation (single-page navigation instead of scattered links)
