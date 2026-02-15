@@ -3,7 +3,7 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import { GoogleAnalytics } from '@next/third-parties/google';
+import { GoogleAnalytics, GoogleAdSense } from '@next/third-parties/google';
 
 const inter = Inter({
   variable: "--font-inter",
@@ -80,6 +80,9 @@ export default function RootLayout({
         <Footer />
       </body>
       <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID || ''} />
+      {process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_ID && (
+        <GoogleAdSense publisherId={process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_ID} />
+      )}
     </html>
   );
 }
