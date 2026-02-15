@@ -256,6 +256,29 @@ export function astToConfig(ast: NginxAST): ImportResult {
         }
     }
 
+    // Map root directives (e.g. limit_req_zone)
+    ast.children.forEach(node => {
+        if (node.type === 'directive' && node.name === 'limit_req_zone') {
+            // Example: limit_req_zone $binary_remote_addr zone=req_limit:10m rate=10r/s;
+            if (node.args.some(arg => arg.includes('zone=req_limit'))) {
+                config.security.rateLimiting = true;
+                const rateArg = node.args.find(arg => arg.startsWith('rate='));
+                if (rateArg) {
+                    const match = rateArg.match(/rate=(\d+)/);
+                    if (match) config.security.rateLimit = parseInt(match[1]);
+                }
+            }
+        }
+    });
+
+    // Heuristics: Detect static caching
+    const hasStaticCache = config.locations.some(l =>
+        l.matchType === 'regex_case_insensitive' &&
+        (l.path.includes('jpg') || l.path.includes('css')) &&
+        l.cacheExpiry
+    );
+    if (hasStaticCache) config.performance.staticCaching = true;
+
     if (customDirectives.length > 0) {
         config.customDirectives = customDirectives.join('\n');
     }
@@ -328,6 +351,9 @@ function mapServerDirective(
 
         case 'gzip':
             config.performance.gzip = args[0] === 'on';
+            break;
+        case 'brotli':
+            config.performance.brotli = args[0] === 'on';
             break;
         case 'gzip_types':
             config.performance.gzipTypes = args;

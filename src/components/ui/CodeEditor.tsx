@@ -55,12 +55,12 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
     };
 
     return (
-        <div className={`relative font-mono text-sm leading-6 ${className}`}>
+        <div className={`relative font-mono text-sm leading-6 ${className} bg-dark-950`}>
             {/* Syntax Highlight Layer */}
             <pre
                 ref={preRef}
                 aria-hidden="true"
-                className={`absolute inset-0 m-0 pointer-events-none p-4 overflow-hidden whitespace-pre-wrap break-words text-transparent z-0 custom-scrollbar`}
+                className={`absolute inset-0 m-0 pointer-events-none p-4 overflow-hidden whitespace-pre-wrap break-words z-0 custom-scrollbar text-[#dadada]`}
                 style={{ fontFamily: 'inherit' }}
             >
                 <code className={`language-${language}`}>
@@ -80,7 +80,8 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
                 className="absolute inset-0 w-full h-full p-4 bg-transparent text-transparent caret-white resize-none outline-none z-10 overflow-auto whitespace-pre-wrap break-words custom-scrollbar"
                 style={{
                     fontFamily: 'inherit',
-                    lineHeight: 'inherit'
+                    lineHeight: 'inherit',
+                    color: 'transparent',
                 }}
             />
         </div>

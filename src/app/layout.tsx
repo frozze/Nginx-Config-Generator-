@@ -5,6 +5,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { GoogleAnalytics } from '@next/third-parties/google';
 import Script from 'next/script';
+import "prismjs/themes/prism-tomorrow.css";
 
 const inter = Inter({
   variable: "--font-inter",
