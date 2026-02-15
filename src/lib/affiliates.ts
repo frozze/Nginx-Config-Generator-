@@ -5,7 +5,9 @@ export interface AffiliateProvider {
     tagline: string;
     credit: string;
     color: string;
-    image?: string;
+    image?: string; // Fallback or single image
+    imageLight?: string; // Specific image for light mode
+    imageDark?: string; // Specific image for dark mode
 }
 
 export const affiliateProviders: AffiliateProvider[] = [
@@ -22,7 +24,8 @@ export const affiliateProviders: AffiliateProvider[] = [
         name: 'Vultr',
         slug: 'vultr',
         url: 'https://www.vultr.com/?ref=9868399',
-        image: '/images/vultr-logo-white.svg',
+        imageLight: '/images/vultr-logo-light.svg',
+        imageDark: '/images/vultr-logo-dark.svg',
         tagline: 'High performance cloud',
         credit: '$300 free credit',
         color: '#007BFC',

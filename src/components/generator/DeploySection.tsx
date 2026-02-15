@@ -25,11 +25,25 @@ export default function DeploySection() {
                             target="_blank"
                             rel="sponsored noopener"
                             onClick={() => trackAffiliateClick(provider.slug)}
-                            className={`group flex flex-col gap-2 p-3 rounded-xl border border-dark-700 bg-dark-900/50 hover:bg-dark-800 hover:border-dark-600 transition-all ${provider.image ? 'items-center justify-center p-0 overflow-hidden border-none bg-transparent hover:bg-transparent' : ''
+                            className={`group flex flex-col gap-2 p-3 rounded-xl border border-dark-700 bg-dark-900/50 hover:bg-dark-800 hover:border-dark-600 transition-all ${(provider.image || provider.imageLight) ? 'items-center justify-center p-0 overflow-hidden border-none bg-transparent hover:bg-transparent' : ''
                                 }`}
                         >
-                            {provider.image ? (
-                                // Badge image (e.g. DigitalOcean, Vultr)
+                            {provider.imageLight && provider.imageDark ? (
+                                // Theme-aware badges (e.g. Vultr)
+                                <>
+                                    <img
+                                        src={provider.imageLight}
+                                        alt={`${provider.name} Referral Badge`}
+                                        className="w-full h-auto max-h-[50px] object-contain dark:hidden"
+                                    />
+                                    <img
+                                        src={provider.imageDark}
+                                        alt={`${provider.name} Referral Badge`}
+                                        className="w-full h-auto max-h-[50px] object-contain hidden dark:block"
+                                    />
+                                </>
+                            ) : provider.image ? (
+                                // Single Badge image (e.g. DigitalOcean)
                                 <img
                                     src={provider.image}
                                     alt={`${provider.name} Referral Badge`}
