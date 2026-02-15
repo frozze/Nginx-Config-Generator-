@@ -71,13 +71,29 @@ export const rules: LintRule[] = [
     {
         id: 'security-ssl-missing',
         title: 'SSL/TLS Disabled',
-        message: 'Site is served over HTTP. Enable SSL/TLS for encryption.',
+        message: 'Site is served over HTTP. Enable SSL/TLS for encryption (required for 100/100 score).',
         category: 'security',
         severity: 'error',
         test: (c) => !c.ssl.enabled && c.listenPort === 80,
-        // Fix is complex (requires cert paths), so no auto-fix provided here generally, 
-        // or we could enable it with placeholders.
+        fix: () => ({
+            ssl: {
+                enabled: true,
+                certificatePath: '/etc/ssl/certs/example.crt',
+                keyPath: '/etc/ssl/private/example.key'
+            }
+        } as DeepPartial<NginxConfig>),
         docsUrl: '/docs/lint/security-ssl-missing',
+    },
+    // ...
+    {
+        id: 'bp-http-redirect-without-ssl',
+        title: 'HTTP Redirect Without SSL',
+        message: 'HTTP-to-HTTPS redirect is configured but SSL is not enabled. The redirect will fail or cause a loop.',
+        category: 'best-practice',
+        severity: 'error',
+        test: (c) => c.ssl.httpRedirect && !c.ssl.enabled,
+        fix: () => ({ ssl: { httpRedirect: false } } as DeepPartial<NginxConfig>),
+        docsUrl: '/docs/lint/bp-http-redirect-without-ssl',
     },
     {
         id: 'security-upstream-needs-ssl',
@@ -229,15 +245,7 @@ export const rules: LintRule[] = [
         test: (c) => c.locations.length === 0 && !c.reverseProxy.enabled,
         docsUrl: '/docs/lint/bp-missing-root-or-proxy',
     },
-    {
-        id: 'bp-http-redirect-without-ssl',
-        title: 'HTTP Redirect Without SSL',
-        message: 'HTTP-to-HTTPS redirect is configured but SSL is not enabled. The redirect will fail or cause a loop.',
-        category: 'best-practice',
-        severity: 'error',
-        test: (c) => c.ssl.httpRedirect && !c.ssl.enabled,
-        docsUrl: '/docs/lint/bp-http-redirect-without-ssl',
-    },
+
     {
         id: 'bp-single-server-upstream',
         title: 'Single Server in Upstream',
