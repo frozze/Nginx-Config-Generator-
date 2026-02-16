@@ -41,10 +41,11 @@ export interface LintReport {
 }
 
 // Utility type for nested partials
-type DeepPartial<T> = {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    [P in keyof T]?: T[P] extends Array<any> ? T[P] : DeepPartial<T[P]>;
-};
+type DeepPartial<T> = T extends readonly (infer U)[]
+    ? readonly DeepPartial<U>[]
+    : T extends object
+        ? { [P in keyof T]?: DeepPartial<T[P]> }
+        : T;
 
 export const rules: LintRule[] = [
     // ─── Security ─────────────────────────────────────────────────────────────
@@ -77,6 +78,14 @@ export const rules: LintRule[] = [
         test: (c) => !c.ssl.enabled && c.listenPort === 80,
         docsUrl: '/docs/lint/security-ssl-missing',
     },
+    {
+        id: 'security-ssl-enabled-missing-certs',
+        title: 'SSL Enabled Without Certificate Paths',
+        message: 'SSL/TLS is enabled but certificate or key path is missing. Nginx will fail to start with an invalid TLS server block.',
+        category: 'security',
+        severity: 'error',
+        test: (c) => c.ssl.enabled && (!c.ssl.certificatePath.trim() || !c.ssl.keyPath.trim()),
+    },
     // ...
     {
         id: 'bp-http-redirect-without-ssl',
@@ -96,6 +105,15 @@ export const rules: LintRule[] = [
         severity: 'info',
         test: (c) => c.reverseProxy.enabled && c.reverseProxy.backendAddress.startsWith('http://') && !c.reverseProxy.backendAddress.includes('localhost') && !c.reverseProxy.backendAddress.includes('127.0.0.1'),
         docsUrl: '/docs/lint/security-upstream-needs-ssl',
+    },
+    {
+        id: 'correctness-proxy-enabled-without-backend',
+        title: 'Reverse Proxy Enabled Without Backend',
+        message: 'Reverse proxy mode is enabled, but backend address is empty. Requests will fail because there is no upstream destination.',
+        category: 'correctness',
+        severity: 'error',
+        test: (c) => c.reverseProxy.enabled && !c.reverseProxy.backendAddress.trim(),
+        fix: () => ({ reverseProxy: { enabled: false } } as DeepPartial<NginxConfig>),
     },
 
     // ─── Performance ──────────────────────────────────────────────────────────
@@ -127,7 +145,7 @@ export const rules: LintRule[] = [
         message: 'Worker connections is set low (< 1024). Default is usually 1024 or higher for production.',
         category: 'best-practice',
         severity: 'warning',
-        test: (c) => false, // c.performance.workerConnections < 1024, // Disabled: meaningless for server-block only configs
+        test: () => false, // c.performance.workerConnections < 1024, // Disabled: meaningless for server-block only configs
         fix: () => ({ performance: { workerConnections: 1024 } } as DeepPartial<NginxConfig>),
         docsUrl: '/docs/lint/bp-worker-connections-low',
     },
@@ -263,6 +281,11 @@ export const rules: LintRule[] = [
 export function lintConfig(config: NginxConfig): LintReport {
     const results: LintResult[] = [];
     const counts = { error: 0, warning: 0, info: 0 };
+    const severityRank: Record<LintSeverity, number> = {
+        error: 0,
+        warning: 1,
+        info: 2,
+    };
 
     for (const rule of rules) {
         try {
@@ -281,6 +304,12 @@ export function lintConfig(config: NginxConfig): LintReport {
             console.error(`Error running lint rule ${rule.id}:`, err);
         }
     }
+
+    results.sort((a, b) => {
+        const severityDiff = severityRank[a.severity] - severityRank[b.severity];
+        if (severityDiff !== 0) return severityDiff;
+        return a.title.localeCompare(b.title);
+    });
 
     // simple score calculation
     // Start at 100

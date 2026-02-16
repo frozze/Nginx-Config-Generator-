@@ -20,7 +20,8 @@ export async function GET(
         }
 
         // Only expose safe fields — never leak userId
-        const { userId: _userId, ...safeConfig } = config;
+        const { userId, ...safeConfig } = config;
+        void userId;
         return NextResponse.json(safeConfig);
     } catch {
         return NextResponse.json(

@@ -1,6 +1,7 @@
 'use client';
 
 import { affiliateProviders, trackAffiliateClick } from '@/lib/affiliates';
+import Image from 'next/image';
 import { ExternalLink, Server } from 'lucide-react';
 
 export default function DeploySection() {
@@ -31,22 +32,28 @@ export default function DeploySection() {
                             {provider.imageLight && provider.imageDark ? (
                                 // Theme-aware badges (e.g. Vultr)
                                 <>
-                                    <img
+                                    <Image
                                         src={provider.imageLight}
                                         alt={`${provider.name} Referral Badge`}
+                                        width={320}
+                                        height={50}
                                         className="theme-img-light w-full h-auto max-h-[50px] object-contain"
                                     />
-                                    <img
+                                    <Image
                                         src={provider.imageDark}
                                         alt={`${provider.name} Referral Badge`}
+                                        width={320}
+                                        height={50}
                                         className="theme-img-dark w-full h-auto max-h-[50px] object-contain"
                                     />
                                 </>
                             ) : provider.image ? (
                                 // Single Badge image (e.g. DigitalOcean)
-                                <img
+                                <Image
                                     src={provider.image}
                                     alt={`${provider.name} Referral Badge`}
+                                    width={320}
+                                    height={50}
                                     className="w-full h-auto max-h-[50px] object-contain"
                                 />
                             ) : (

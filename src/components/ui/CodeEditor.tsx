@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import Prism from 'prismjs';
 import 'prismjs/components/prism-nginx';
 import 'prismjs/themes/prism-tomorrow.css';

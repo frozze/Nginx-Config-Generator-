@@ -6,7 +6,6 @@ import { parseNginxConfig } from '@/lib/nginx/parser';
 import { generateNginxConfig } from '@/lib/nginx/engine/generator';
 import { NginxConfig } from '@/lib/nginx/types';
 import { AlertTriangle, CheckCircle, Info, RefreshCw, ArrowRight, Wrench } from 'lucide-react';
-import Link from 'next/link';
 
 export default function LinterPage() {
     const { config: storeConfig } = useConfigStore();
@@ -71,6 +70,32 @@ export default function LinterPage() {
             runLinting(generated.config);
         } catch (err) {
             console.error('Failed to apply fix:', err);
+        }
+    };
+
+    const applyAllFixes = () => {
+        if (!parsedConfig || !report) return;
+
+        const fixableResults = report.results.filter((result) =>
+            availableRules.find((rule) => rule.id === result.ruleId)?.fix
+        );
+
+        if (fixableResults.length === 0) return;
+
+        try {
+            const nextConfig = fixableResults.reduce((accConfig, result) => {
+                const rule = availableRules.find((r) => r.id === result.ruleId);
+                if (!rule?.fix) return accConfig;
+                const updates = rule.fix(accConfig);
+                return deepMerge(accConfig, updates);
+            }, parsedConfig);
+
+            setParsedConfig(nextConfig);
+            const generated = generateNginxConfig(nextConfig);
+            setInputConfig(generated.config);
+            runLinting(generated.config);
+        } catch (err) {
+            console.error('Failed to apply all fixes:', err);
         }
     };
 
@@ -146,7 +171,17 @@ export default function LinterPage() {
 
                             {/* Issues List */}
                             <div className="space-y-4">
-                                <h3 className="text-sm font-semibold text-dark-400 uppercase tracking-wider">Issues Found</h3>
+                                <div className="flex items-center justify-between gap-3">
+                                    <h3 className="text-sm font-semibold text-dark-400 uppercase tracking-wider">Issues Found</h3>
+                                    {report.results.some((result) => availableRules.find((r) => r.id === result.ruleId)?.fix) && (
+                                        <button
+                                            onClick={applyAllFixes}
+                                            className="px-3 py-1.5 rounded-lg bg-accent-500/10 text-accent-400 hover:bg-accent-500/20 text-xs font-medium transition-colors"
+                                        >
+                                            Fix all available
+                                        </button>
+                                    )}
+                                </div>
                                 {report.results.length === 0 ? (
                                     <div className="p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center gap-3">
                                         <CheckCircle className="w-5 h-5" />
@@ -156,8 +191,8 @@ export default function LinterPage() {
                                         </div>
                                     </div>
                                 ) : (
-                                    report.results.map((result, idx) => (
-                                        <div key={idx} className={`p-4 rounded-lg border flex gap-3 ${getSeverityStyles(result.severity)}`}>
+                                    report.results.map((result) => (
+                                        <div key={result.ruleId} className={`p-4 rounded-lg border flex gap-3 ${getSeverityStyles(result.severity)}`}>
                                             <div className="mt-0.5">
                                                 {getSeverityIcon(result.severity)}
                                             </div>
@@ -199,26 +234,27 @@ export default function LinterPage() {
     );
 }
 
-// Simple Deep Merge Utility
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 // Simple Deep Merge Utility (Immutable)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function deepMerge(target: any, source: any): any {
-    const output = { ...target };
+function deepMerge<T extends Record<string, unknown>>(target: T, source: Partial<T>): T {
+    const output: Record<string, unknown> = { ...target };
+
     if (isObject(target) && isObject(source)) {
-        Object.keys(source).forEach(key => {
-            if (isObject(source[key])) {
-                if (!(key in target)) {
-                    Object.assign(output, { [key]: source[key] });
-                } else {
-                    output[key] = deepMerge(target[key], source[key]);
-                }
+        Object.keys(source).forEach((key) => {
+            const sourceValue = source[key as keyof typeof source];
+            const targetValue = target[key as keyof T];
+
+            if (isObject(sourceValue) && isObject(targetValue)) {
+                output[key] = deepMerge(
+                    targetValue as Record<string, unknown>,
+                    sourceValue as Record<string, unknown>
+                );
             } else {
-                Object.assign(output, { [key]: source[key] });
+                output[key] = sourceValue as unknown;
             }
         });
     }
-    return output;
+
+    return output as T;
 }
 
 function isObject(item: unknown) {
