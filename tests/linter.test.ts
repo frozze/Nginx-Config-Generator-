@@ -4,7 +4,7 @@ import type { NginxConfig } from '../src/lib/nginx/types';
 
 type DeepPartial<T> = {
     [P in keyof T]?: T[P] extends readonly (infer U)[]
-        ? readonly DeepPartial<U>[]
+        ? DeepPartial<U>[]
         : T[P] extends object
             ? DeepPartial<T[P]>
             : T[P];
@@ -96,11 +96,15 @@ function makeConfig(overrides: DeepPartial<NginxConfig> = {}): NginxConfig {
     const config = { ...defaults, ...overrides } as NginxConfig;
 
     if (overrides.ssl) config.ssl = { ...defaults.ssl, ...overrides.ssl };
-    if (overrides.reverseProxy) config.reverseProxy = { ...defaults.reverseProxy, ...overrides.reverseProxy };
+    if (overrides.reverseProxy) {
+        config.reverseProxy = { ...defaults.reverseProxy, ...overrides.reverseProxy } as NginxConfig['reverseProxy'];
+    }
     if (overrides.security) config.security = { ...defaults.security, ...overrides.security };
     if (overrides.performance) config.performance = { ...defaults.performance, ...overrides.performance };
     if (overrides.logging) config.logging = { ...defaults.logging, ...overrides.logging };
-    if (overrides.upstream) config.upstream = { ...defaults.upstream, ...overrides.upstream };
+    if (overrides.upstream) {
+        config.upstream = { ...defaults.upstream, ...overrides.upstream } as NginxConfig['upstream'];
+    }
 
     return config;
 }

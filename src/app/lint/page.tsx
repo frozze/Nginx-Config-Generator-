@@ -83,7 +83,7 @@ export default function LinterPage() {
         if (fixableResults.length === 0) return;
 
         try {
-            const nextConfig = fixableResults.reduce((accConfig, result) => {
+            const nextConfig = fixableResults.reduce<NginxConfig>((accConfig, result) => {
                 const rule = availableRules.find((r) => r.id === result.ruleId);
                 if (!rule?.fix) return accConfig;
                 const updates = rule.fix(accConfig);
@@ -235,26 +235,32 @@ export default function LinterPage() {
 }
 
 // Simple Deep Merge Utility (Immutable)
-function deepMerge<T extends Record<string, unknown>>(target: T, source: Partial<T>): T {
-    const output: Record<string, unknown> = { ...target };
+type DeepPartial<T> = T extends readonly (infer U)[]
+    ? readonly DeepPartial<U>[]
+    : T extends object
+        ? { [P in keyof T]?: DeepPartial<T[P]> }
+        : T;
+
+function deepMerge(target: NginxConfig, source: DeepPartial<NginxConfig>): NginxConfig {
+    const output = { ...target } as Record<string, unknown>;
 
     if (isObject(target) && isObject(source)) {
-        Object.keys(source).forEach((key) => {
-            const sourceValue = source[key as keyof typeof source];
-            const targetValue = target[key as keyof T];
+        (Object.keys(source) as Array<keyof NginxConfig>).forEach((key) => {
+            const sourceValue = source[key];
+            const targetValue = target[key];
 
-            if (isObject(sourceValue) && isObject(targetValue)) {
+            if (isObject(sourceValue) && isObject(targetValue) && !Array.isArray(sourceValue) && !Array.isArray(targetValue)) {
                 output[key] = deepMerge(
-                    targetValue as Record<string, unknown>,
-                    sourceValue as Record<string, unknown>
+                    targetValue as unknown as NginxConfig,
+                    sourceValue as unknown as DeepPartial<NginxConfig>
                 );
             } else {
-                output[key] = sourceValue as unknown;
+                output[key] = sourceValue;
             }
         });
     }
 
-    return output as T;
+    return output as unknown as NginxConfig;
 }
 
 function isObject(item: unknown) {
