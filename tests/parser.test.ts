@@ -1,5 +1,7 @@
 import { describe, test, expect } from 'vitest';
 import { parseNginxConfig, tokenize } from '../src/lib/nginx/parser';
+import { generateNginxConfig } from '../src/lib/nginx/engine/generator';
+import { createDefaultConfig } from '../src/stores/configStore';
 
 describe('Nginx Config Parser', () => {
     test('tokenizes basic directive', () => {
@@ -94,5 +96,17 @@ server {
         const loc2 = result.config.locations[1];
         expect(loc2.matchType).toBe('exact');
         expect(loc2.root).toBe('/usr/share/nginx/html');
+    });
+
+    test('does not import generated static-caching locations as user locations', () => {
+        const config = createDefaultConfig();
+        config.performance.staticCaching = true;
+
+        const generated = generateNginxConfig(config).config;
+        const parsed = parseNginxConfig(generated).config;
+
+        expect(parsed.performance.staticCaching).toBe(true);
+        expect(parsed.locations.some((loc) => loc.path.includes('jpg|jpeg|png|gif|ico|svg|webp'))).toBe(false);
+        expect(parsed.locations.some((loc) => loc.path.includes('css|js|woff2|woff|ttf'))).toBe(false);
     });
 });

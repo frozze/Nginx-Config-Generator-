@@ -215,7 +215,16 @@ export function astToConfig(ast: NginxAST): ImportResult {
             } else if (node.type === 'block') {
                 if (node.name === 'location') {
                     const loc = mapLocationBlock(node, config);
-                    if (loc) config.locations.push(loc);
+                    if (loc) {
+                        if (isGeneratedStaticCachingLocation(loc)) {
+                            config.performance.staticCaching = true;
+                            if (!config.performance.cacheExpiry && loc.cacheExpiry) {
+                                config.performance.cacheExpiry = loc.cacheExpiry;
+                            }
+                        } else {
+                            config.locations.push(loc);
+                        }
+                    }
                 } else {
                     warnings.push(`Ignored unsupported block "${node.name}" inside server.`);
                 }
@@ -456,6 +465,18 @@ function mapLocationBlock(
     });
 
     return loc;
+}
+
+function isGeneratedStaticCachingLocation(loc: LocationConfig): boolean {
+    if (loc.matchType !== 'regex_case_insensitive') return false;
+
+    const normalizedPath = loc.path.replace(/\s+/g, '');
+    const hasGeneratedExtensions =
+        normalizedPath.includes('jpg|jpeg|png|gif|ico|svg|webp') ||
+        normalizedPath.includes('jpg|jpeg|png|gif|ico|svg|webp|avif|css|js') ||
+        normalizedPath.includes('css|js|woff2|woff|ttf');
+
+    return hasGeneratedExtensions && Boolean(loc.cacheExpiry);
 }
 
 export function parseNginxConfig(raw: string): ImportResult {

@@ -5,6 +5,7 @@ import { lintConfig, availableRules, type LintReport, type LintResult } from '@/
 import { parseNginxConfig } from '@/lib/nginx/parser';
 import { generateNginxConfig } from '@/lib/nginx/engine/generator';
 import { NginxConfig } from '@/lib/nginx/types';
+import { CodeEditor } from '@/components/ui/CodeEditor';
 import { AlertTriangle, CheckCircle, Info, RefreshCw, ArrowRight, Wrench } from 'lucide-react';
 
 export default function LinterPage() {
@@ -124,12 +125,12 @@ export default function LinterPage() {
                         <span className="text-xs text-dark-500">Paste your nginx.conf here</span>
                     </div>
                     <div className="relative h-[600px] border border-dark-700 rounded-xl overflow-hidden bg-dark-950">
-                        <textarea
+                        <CodeEditor
                             value={inputConfig}
-                            onChange={(e) => handleInputChange(e.target.value)}
-                            className="w-full h-full p-4 bg-transparent text-sm font-mono text-dark-200 resize-none focus:outline-none"
+                            onChange={handleInputChange}
+                            language="nginx"
+                            className="w-full h-full"
                             placeholder="server { ... }"
-                            spellCheck={false}
                         />
                     </div>
                     {parseError && (
